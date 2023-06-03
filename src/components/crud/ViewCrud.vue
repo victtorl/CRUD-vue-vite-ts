@@ -4,14 +4,25 @@
     <div>
         <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Nombre</label>
         <div class="mt-2">
-          <input type="name" autocomplete="off" v-model="name" name="name" id="name" class="block w-full px-4 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="name" />
+          <input type="name" autocomplete="off" v-model="name" name="name" id="name" class="block w-full px-4 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="name"
+          :has-error="v$.name.$error" 
+          />
+          <p class="text-red-500" v-for="error of v$.name.$errors" :key="error.$uid"><small>{{
+            error.$message
+          }}</small></p>
         </div>
       </div>
 
       <div>
         <label for="number" class="block text-sm font-medium leading-6 text-gray-900">Precio</label>
         <div class="mt-2">
-          <input type="number" @keyup.enter="agregaItem({name:name,price:price})" v-model="price" name="number" id="number" class="block w-full px-4 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="S/." />
+          <input type="number" @keyup.enter="agregaItem({name:name,price:price})" v-model="price" name="number" id="number" class="block w-full px-4 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="S/." 
+          :has-error="v$.price.$error" 
+          />
+          <p class="text-red-500" v-for="error of v$.price.$errors" :key="error.$uid"><small>{{
+            error.$message
+          }}</small></p>
+
         </div>
       </div>
 
@@ -49,12 +60,29 @@
 
 <script setup lang="ts">
 import { looseIndexOf } from '@vue/shared';
-import { ref } from 'vue';
-
+import { ref,computed } from 'vue';
+import { required, helpers } from '@vuelidate/validators'
+import { useVuelidate } from '@vuelidate/core'
 import {useCrudStore} from '../../stores/Crud'
+
+
+
 
 const name=ref('')
 const price=ref(null)
+
+//valitation
+const rules=computed(() => ({
+    name:{
+      required:helpers.withMessage('Este campo es requerido',required)
+    },
+    price:{
+      required:helpers.withMessage('Este campo es requerido',required)
+    }
+}))
+const v$ = useVuelidate(rules, {
+  name,price
+})
 
 interface itemItfz{
   id:number,
@@ -65,20 +93,22 @@ interface itemItfz{
 const crudstore=useCrudStore()
 const items =ref([]as Array<itemItfz>)
 
-
-
 const agregaItem=(item:any) => {
+  v$.value.$touch();
+  if (!v$.value.$invalid) {
       crudstore.additemcrud(item)
       items.value=crudstore.itemscrud
       name.value=''
-      price.value=null
-      
+      price.value=null  
+  }    
 }
 
 const deleteItem=(id:number)=>{
       crudstore.deleteitemcrud(id)
       items.value=crudstore.itemscrud
 }
+
+
 
 
 </script>
